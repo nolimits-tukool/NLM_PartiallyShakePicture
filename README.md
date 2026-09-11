@@ -1,4 +1,4 @@
-# ピクチャ部分シェイク・プラグイン（NLM_PartiallyShakePicture.js）
+## ピクチャ部分シェイク・プラグイン（NLM_PartiallyShakePicture.js）
 ### RPGツクールMZ/MV両用プラグイン
 
 ピクチャの一部範囲のみをシェイクさせます
