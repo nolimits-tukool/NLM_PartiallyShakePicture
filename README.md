@@ -1,0 +1,2 @@
+# NLM_PartiallyShakePicture
+ピクチャの一部範囲のみをシェイクさせます
