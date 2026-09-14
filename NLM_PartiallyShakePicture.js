@@ -7,11 +7,12 @@
 ----------------------------------------------------------------------------
  Version
  1.0.0  2026/09/11 初稿
+ 1.1.0  2026/09/14 中心ずれ値が大きいとスプライトずれが生じる点を修正
 ============================================================================*/
 
 /*:
  * @target MZ MV
- * @plugindesc ピクチャ部分シェイク・プラグイン (v1.0.0)
+ * @plugindesc ピクチャ部分シェイク・プラグイン (v1.1.0)
  * @author ノリミツ (NoLimits)
  * @url https://github.com/nolimits-tukool
  * 
@@ -165,18 +166,16 @@
  * 
  * ＜注意＞
  * ・シェイクするピクチャの不透明度は 255 に設定して下さい（低いと表示が乱れる)
- * ・元ピクチャに対しコピー像を手前で揺らしているだけの簡単な原理ですので、絵が
- * 　 ダブって見える瞬間があるのは仕様です。シェイクしたい場所の中心に合わせて
- * 　 範囲を小さく絞ったりして、なるべく自然に見えるように調整して下さい
+ * ・元ピクチャはそのままで切り抜きコピー像を手前で揺らしているだけの簡単な原理
+ * 　 なので（透過部や輪郭辺縁部で）絵がダブって見える瞬間があるのは仕様です
+ * 　 シェイクの強さを小さくしたり、範囲を小さく絞ったりして、調整して下さい
+ * 　  →欠点のあるプラグインですが、簡単に絵に動きをつけられる利点もあります
  * ・ウエイトを待たないため必要ならイベントコマンドのウエイトを適宜入れて下さい
  * ・同一のピクチャ番号で、一度にシェイクできるのは、一か所のみです
  * 　 （別番号の複数のピクチャを同時にシェイクさせることはできます）
- * ・シェイク終了直前の輪郭に微妙なずれ（座標計算誤差）が生じる場合、範囲％の値
- * 　 を1ずらすことで直る場合があります
  * ・利用するCGの著作権は遵守して下さい
  * 
  * 利用規約はMITライセンスの通りです
- * 　色々欠点のあるプラグインですが、簡単に絵に動きをつけられる利点もあります
  * 　MZでは ButtonPicture.js と組み合わせることで利用法が広がるかも知れません
  */
 
@@ -319,24 +318,29 @@
     const sh1 = Math.floor(height * Math.min(this._NPPSscaleY / 100, 1));
     const sx1 = Math.floor((width  - sw1) / 2 + this._NPPSdX);
     const sy1 = Math.floor((height - sh1) / 2 + this._NPPSdY);
-    const d   = Math.min(sw1, sh1) * this._NPPSscaleM / 100;
-    const sw2 = Math.floor(Math.max(sw1 - d, 0));
-    const sh2 = Math.floor(Math.max(sh1 - d, 0));
+    const dw  = sw1 * Math.min(this._NPPSscaleM / 100, 1);
+    const dh  = sh1 * Math.min(this._NPPSscaleM / 100, 1);
+    const sw2 = Math.floor(sw1 - dw);
+    const sh2 = Math.floor(sh1 - dh);
     const sx2 = Math.floor((width  - sw2) / 2 + this._NPPSdX);
     const sy2 = Math.floor((height - sh2) / 2 + this._NPPSdY);
     this._NPPSsprite1.setFrame(sx1, sy1, sw1, sh1);
     this._NPPSsprite2.setFrame(sx2, sy2, sw2, sh2);
+    this._NPPSsx1 = sx1;
+    this._NPPSsy1 = sy1;
+    this._NPPSsx2 = sx2;
+    this._NPPSsy2 = sy2;
   };
 
   Sprite_Picture.prototype.NPPScreatePartialSprites = function() {
     if (!this._NPPSsprite1) {
       this._NPPSsprite1 = new Sprite();
-      this._NPPSsprite1.anchor.x = 0.5;
-      this._NPPSsprite1.anchor.y = 0.5;
+      this._NPPSsprite1.anchor.x = 0;
+      this._NPPSsprite1.anchor.y = 0;
       this.addChild(this._NPPSsprite1);
       this._NPPSsprite2 = new Sprite();
-      this._NPPSsprite2.anchor.x = 0.5;
-      this._NPPSsprite2.anchor.y = 0.5;
+      this._NPPSsprite2.anchor.x = 0;
+      this._NPPSsprite2.anchor.y = 0;
       this.addChild(this._NPPSsprite2);
       this._NPPSsprite1.opacity = this.NPPSspriteOpacity();
       this._NPPSsprite2.opacity = 255;
@@ -349,7 +353,7 @@
 
   Sprite_Picture.prototype.NPPSupdateShake = function() {
     const delta = this._NPPSpower * this._NPPSspeed * this._NPPSdirection / 20;
-    if (this._NPPSduration === 15 || this.NPPSduration === 7) {
+    if (this._NPPSduration === 15) {
       this._NPPSpower = Math.max(this._NPPSpower - 2, 1);
     }
     if (this._NPPSduration <= 1 && this._NPPSshake * (this._NPPSshake + delta) < 0) {
@@ -369,14 +373,14 @@
   };
 
   Sprite_Picture.prototype.NPPSupdatePosition = function() {
-    const ox = !this.picture().origin() ? this.bitmap.width  / 2 : 0;
-    const oy = !this.picture().origin() ? this.bitmap.height / 2 : 0;
+    const ox = this.picture().origin() ? this.bitmap.width  / 2 : 0;
+    const oy = this.picture().origin() ? this.bitmap.height / 2 : 0;
     const shake = Math.round(this._NPPSshake);
     const kx = this._NPPSsideToSide ? shake : 0;
     const ky = this._NPPSsideToSide ? 0 : shake;
-    this._NPPSsprite1.x = ox + this._NPPSdX + kx;
-    this._NPPSsprite1.y = oy + this._NPPSdY + ky;
-    this._NPPSsprite2.x = ox + this._NPPSdX + kx;
-    this._NPPSsprite2.y = oy + this._NPPSdY + ky;
+    this._NPPSsprite1.x = this._NPPSsx1 - ox + kx;
+    this._NPPSsprite1.y = this._NPPSsy1 - oy + ky;
+    this._NPPSsprite2.x = this._NPPSsx2 - ox + kx;
+    this._NPPSsprite2.y = this._NPPSsy2 - oy + ky;
   };
 })();
