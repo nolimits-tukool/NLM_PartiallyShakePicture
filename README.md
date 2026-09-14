@@ -17,7 +17,7 @@
 
 # download
 
-現在のバージョン： v1.1.0 (2026/09/14)（中心ずれ値が大きいとスプライトずれが生じていた点を修正）
+現在のバージョン： v1.1.0 (2026/09/14)（中心ずれ値が大きいとスプライトずれが生じていた点を修正）  
 プラグインの download は、[右クリック「名前を付けてリンク先を保存」](https://raw.githubusercontent.com/nolimits-tukool/NLM_PartiallyShakePicture/refs/heads/main/NLM_PartiallyShakePicture.js)  
 RPGツクールMZ/MV両用です
 
